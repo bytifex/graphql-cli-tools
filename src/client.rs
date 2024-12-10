@@ -132,7 +132,7 @@ pub async fn http_request(
         )
         .await
         {
-            println!("{:?}", e);
+            log::error!("{:?}", e);
         }
 
         if let Some(duration) = try_reconnect_duration {
@@ -187,8 +187,6 @@ async fn try_ws_request(
 
     let (mut ws_stream, mut _server_response) = tokio_tungstenite::connect_async(request).await?;
 
-    println!("{:?}", _server_response);
-
     ws_stream
         .send(Message::text(serde_json::to_string(&json!({
             "type": "connection_init",
@@ -218,18 +216,15 @@ async fn try_ws_request(
 
                     if let Some(payload) = response.payload {
                         response_processor(payload)?;
-                    } else {
-                        println!("{}", serde_json::to_string_pretty(&response)?);
-                        if response.r#type == "complete" {
-                            break;
-                        }
+                    } else if response.r#type == "complete" {
+                        break;
                     }
                 } else {
-                    println!("Invalid message received from websocket");
+                    log::error!("Invalid message received from websocket");
                 }
             }
             Err(e) => {
-                println!("{e}");
+                log::error!("{e}");
             }
         }
     }
@@ -257,7 +252,7 @@ pub async fn ws_request(
         )
         .await
         {
-            println!("{:?}", e);
+            log::error!("{:?}", e);
         }
 
         if let Some(duration) = try_reconnect_duration {
