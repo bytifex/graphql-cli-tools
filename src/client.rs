@@ -114,13 +114,17 @@ pub async fn try_http_request(
 
 pub async fn http_request(
     server_endpoint: impl AsRef<str>,
-    headers: HeaderMap,
+    mut headers: HeaderMap,
     query: String,
     operation_name: Option<impl AsRef<str>>,
     variables: serde_json::Map<String, serde_json::Value>,
     mut response_processor: impl FnMut(GraphQlResponse) -> Result<(), Box<dyn std::error::Error>>,
     try_reconnect_duration: Option<std::time::Duration>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    headers
+        .entry("accept")
+        .or_insert_with(|| HeaderValue::from_static("application/json"));
+
     loop {
         if let Err(e) = try_http_request(
             server_endpoint.as_ref(),
