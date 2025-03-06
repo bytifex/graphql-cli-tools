@@ -95,7 +95,7 @@ impl<'a> DiffLocationSegment<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for DiffLocationSegment<'a> {
+impl std::fmt::Display for DiffLocationSegment<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.1 {
             Some(name) => write!(f, "{}({})", self.0.as_str(), name),
@@ -104,7 +104,7 @@ impl<'a> std::fmt::Display for DiffLocationSegment<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for DiffLocation<'a> {
+impl std::fmt::Display for DiffLocation<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut buffer = String::new();
         for (count, segment) in self.segments.iter().enumerate() {

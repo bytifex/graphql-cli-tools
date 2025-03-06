@@ -654,6 +654,7 @@ fn compare_field_definitions(
         diff_location.push(DiffLocationSegmentType::Type, None),
         &ty_left.node,
         &ty_right.node,
+        false,
     );
 
     compare_optional_strings(
@@ -821,6 +822,7 @@ fn compare_input_value_definitions(
         diff_location.push(DiffLocationSegmentType::Type, None),
         &ty_left.node,
         &ty_right.node,
+        true,
     );
 
     {
@@ -919,7 +921,30 @@ fn compare_comparables<T: Display + Eq + PartialEq + ?Sized>(
     }
 }
 
-fn compare_types_recursive(left: &Type, right: &Type) -> Option<ChangeType> {
+fn compare_types_recursive(left: &Type, right: &Type, is_argument: bool) -> Option<ChangeType> {
+    #[allow(clippy::collapsible_else_if)]
+    let change_type = if is_argument {
+        if !left.nullable && right.nullable {
+            Some(ChangeType::NonBreaking)
+        } else if left.nullable && !right.nullable {
+            Some(ChangeType::Breaking)
+        } else {
+            None
+        }
+    } else {
+        if !left.nullable && right.nullable {
+            Some(ChangeType::Breaking)
+        } else if left.nullable && !right.nullable {
+            Some(ChangeType::NonBreaking)
+        } else {
+            None
+        }
+    };
+
+    if change_type.is_some() {
+        return change_type;
+    }
+
     match (&left.base, &right.base) {
         (BaseType::Named(left_name), BaseType::Named(right_name)) => {
             if left_name == right_name {
@@ -935,14 +960,14 @@ fn compare_types_recursive(left: &Type, right: &Type) -> Option<ChangeType> {
             }
         }
         (BaseType::List(left_inner), BaseType::List(right_inner)) => {
-            compare_types_recursive(left_inner, right_inner)
+            compare_types_recursive(left_inner, right_inner, is_argument)
         }
         _ => Some(ChangeType::Breaking),
     }
 }
 
-fn compare_types(diff_location: DiffLocation, left: &Type, right: &Type) {
-    if let Some(change_type) = compare_types_recursive(left, right) {
+fn compare_types(diff_location: DiffLocation, left: &Type, right: &Type, is_argument: bool) {
+    if let Some(change_type) = compare_types_recursive(left, right, is_argument) {
         println!(
             "{}: left value = {}, right value = {} (breaking = {})",
             diff_location, left, right, change_type,
